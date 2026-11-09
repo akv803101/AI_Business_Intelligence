@@ -1,0 +1,48 @@
+base: ORDERS
+view_name: ORDERS_ANALYSIS
+derived:
+- alias: IS_OPEN
+  expr: IFF(O_ORDERSTATUS = 'O', 1, 0)
+- alias: IS_FULFILLED
+  expr: IFF(O_ORDERSTATUS = 'F', 1, 0)
+- alias: IS_PARTIAL
+  expr: IFF(O_ORDERSTATUS = 'P', 1, 0)
+- alias: IS_HIGH_PRIORITY
+  expr: IFF(O_ORDERPRIORITY IN ('1-URGENT', '2-HIGH'), 1, 0)
+- alias: ORDER_YEAR
+  expr: YEAR(O_ORDERDATE)
+- alias: ORDER_MONTH
+  expr: DATE_TRUNC('month', O_ORDERDATE)
+joins:
+- table: CUSTOMER
+  from_column: O_CUSTKEY
+  to_column: C_CUSTKEY
+  type: many_to_one
+rollups:
+- name: LINEITEM_ROLLUP
+  table: LINEITEM
+  key: L_ORDERKEY
+  base_key: O_ORDERKEY
+  columns:
+  - alias: LINE_COUNT
+    expr: COUNT(*)
+  - alias: TOTAL_QUANTITY
+    expr: SUM(L_QUANTITY)
+  - alias: TOTAL_EXTENDED_PRICE
+    expr: SUM(L_EXTENDEDPRICE)
+  - alias: TOTAL_NET_REVENUE
+    expr: SUM(L_EXTENDEDPRICE * (1 - L_DISCOUNT))
+  - alias: AVG_DISCOUNT
+    expr: AVG(L_DISCOUNT)
+  - alias: RETURNED_LINE_COUNT
+    expr: COUNT_IF(L_RETURNFLAG = 'R')
+  - alias: OPEN_LINE_COUNT
+    expr: COUNT_IF(L_LINESTATUS = 'O')
+  - alias: LATE_LINE_COUNT
+    expr: COUNT_IF(L_RECEIPTDATE > L_COMMITDATE)
+  - alias: AIR_LINE_COUNT
+    expr: COUNT_IF(L_SHIPMODE IN ('AIR', 'REG AIR'))
+  - alias: LAST_SHIP_DATE
+    expr: MAX(L_SHIPDATE)
+  - alias: LAST_RECEIPT_DATE
+    expr: MAX(L_RECEIPTDATE)

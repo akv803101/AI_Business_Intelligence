@@ -1,0 +1,419 @@
+source: <DATABASE>.<SCHEMA>.ORDERS_ANALYSIS
+status: proposed
+tables:
+- name: ORDERS_ANALYSIS
+  description: Order-level analysis table joining each order to its customer details
+    and to totals rolled up from its order lines (revenue, quantity, discount, returned,
+    open, late and air lines).
+  grain: One row per order (O_ORDERKEY); 1,500,000 rows, each order appearing once.
+  columns:
+  - name: O_ORDERKEY
+    type: NUMBER
+    role: identifier
+    description: Unique order identifier. Keys run from 1 to 6,000,000 with gaps,
+      and each appears once.
+    synonyms:
+    - order id
+    - order number
+    - order key
+  - name: O_CUSTKEY
+    type: NUMBER
+    role: identifier
+    description: Identifier of the customer who placed the order. About 100k distinct
+      customers appear.
+    synonyms:
+    - customer id
+    - customer key
+    - cust id
+  - name: O_ORDERSTATUS
+    type: TEXT
+    role: dimension
+    description: 'Order status code: O, F or P. Shares match the open, fulfilled and
+      partial flags. Letter meanings (open/fulfilled/partial) are assumed.'
+    synonyms:
+    - status
+    - order status
+    - fulfillment status
+  - name: O_TOTALPRICE
+    type: NUMBER
+    role: measure
+    description: Total price recorded on the order header, in currency units. It differs
+      from the sum of line extended prices.
+    synonyms:
+    - order total
+    - order amount
+    - total price
+    - gross order value
+  - name: O_ORDERDATE
+    type: DATE
+    role: date
+    description: Date the order was placed, from 1992-01-01 to 1998-08-02.
+    synonyms:
+    - order date
+    - date placed
+    - purchase date
+  - name: O_ORDERPRIORITY
+    type: TEXT
+    role: dimension
+    description: 'Priority level of the order: 1-URGENT, 2-HIGH, 3-MEDIUM, 4-NOT SPECIFIED,
+      5-LOW. Roughly evenly distributed.'
+    synonyms:
+    - priority
+    - order priority
+    - urgency
+  - name: O_CLERK
+    type: TEXT
+    role: dimension
+    description: Clerk who handled the order (assumed).
+    synonyms:
+    - clerk
+    - handler
+    - sales clerk
+    - agent
+  - name: O_SHIPPRIORITY
+    type: NUMBER
+    role: dimension
+    description: Shipping priority code. Always 0 in this data, so it does not distinguish
+      orders.
+    synonyms:
+    - ship priority
+    - shipping priority
+  - name: O_COMMENT
+    type: TEXT
+    role: dimension
+    description: Free-text comment on the order.
+    synonyms:
+    - order comment
+    - order notes
+    - remarks
+  - name: IS_OPEN
+    type: NUMBER
+    role: flag
+    description: 1 if the order is still open, else 0. Average is 0.488, matching
+      the share of status O.
+    synonyms:
+    - open order
+    - is open
+    - unfulfilled
+    - backlog flag
+  - name: IS_FULFILLED
+    type: NUMBER
+    role: flag
+    description: 1 if the order is fully fulfilled, else 0. Average is 0.4863, matching
+      the share of status F.
+    synonyms:
+    - fulfilled
+    - completed order
+    - is complete
+  - name: IS_PARTIAL
+    type: NUMBER
+    role: flag
+    description: 1 if the order is only partially fulfilled, else 0. Average is 0.0257,
+      matching the share of status P.
+    synonyms:
+    - partial order
+    - partially fulfilled
+  - name: IS_HIGH_PRIORITY
+    type: NUMBER
+    role: flag
+    description: 1 if the order is high priority, else 0. Average 0.4003 matches the
+      share of 1-URGENT plus 2-HIGH (assumed).
+    synonyms:
+    - high priority
+    - urgent order
+    - priority flag
+  - name: ORDER_YEAR
+    type: NUMBER
+    role: dimension
+    description: Calendar year of the order date, 1992 to 1998.
+    synonyms:
+    - year
+    - order year
+  - name: ORDER_MONTH
+    type: DATE
+    role: date
+    description: First day of the month in which the order was placed, for monthly
+      trends.
+    synonyms:
+    - month
+    - order month
+    - period
+  - name: C_NAME
+    type: TEXT
+    role: dimension
+    description: Customer name.
+    synonyms:
+    - customer
+    - customer name
+    - client
+  - name: C_ADDRESS
+    type: TEXT
+    role: dimension
+    description: Customer address.
+    synonyms:
+    - address
+    - customer address
+  - name: C_NATIONKEY
+    type: NUMBER
+    role: dimension
+    description: Code for the customer's nation, 0 to 24. Nation names are not in
+      this table.
+    synonyms:
+    - nation
+    - country
+    - nation key
+    - country code
+  - name: C_PHONE
+    type: TEXT
+    role: dimension
+    description: Customer phone number.
+    synonyms:
+    - phone
+    - telephone
+    - customer phone
+  - name: C_ACCTBAL
+    type: NUMBER
+    role: measure
+    description: Customer account balance, from -999.98 to 9999.99. Repeats for every
+      order of the same customer.
+    synonyms:
+    - account balance
+    - customer balance
+    - balance
+  - name: C_MKTSEGMENT
+    type: TEXT
+    role: dimension
+    description: 'Customer market segment: BUILDING, HOUSEHOLD, FURNITURE, MACHINERY
+      or AUTOMOBILE.'
+    synonyms:
+    - segment
+    - market segment
+    - customer segment
+  - name: C_COMMENT
+    type: TEXT
+    role: dimension
+    description: Free-text comment on the customer.
+    synonyms:
+    - customer comment
+    - customer notes
+  - name: LINE_COUNT
+    type: NUMBER
+    role: measure
+    description: Number of lines on the order, from 1 to 7. Used as the denominator
+      for line-based rates.
+    synonyms:
+    - lines
+    - number of lines
+    - line items
+    - order lines
+  - name: TOTAL_QUANTITY
+    type: NUMBER
+    role: measure
+    description: Total quantity of items across the order's lines.
+    synonyms:
+    - quantity
+    - units
+    - total units
+    - qty
+  - name: TOTAL_EXTENDED_PRICE
+    type: NUMBER
+    role: measure
+    description: Sum of line extended prices for the order, before discount.
+    synonyms:
+    - extended price
+    - gross revenue
+    - gross sales
+  - name: TOTAL_NET_REVENUE
+    type: NUMBER
+    role: measure
+    description: Order revenue after line discounts. Basis of the Net Revenue KPI.
+      Tax treatment is not stated (assumed).
+    synonyms:
+    - net revenue
+    - revenue
+    - net sales
+    - sales
+  - name: AVG_DISCOUNT
+    type: NUMBER
+    role: measure
+    description: Average discount rate across the order's lines, from 0 to 0.10 (0%
+      to 10%).
+    synonyms:
+    - discount
+    - average discount
+    - discount rate
+  - name: RETURNED_LINE_COUNT
+    type: NUMBER
+    role: measure
+    description: Number of the order's lines that were returned.
+    synonyms:
+    - returned lines
+    - returns
+    - return count
+  - name: OPEN_LINE_COUNT
+    type: NUMBER
+    role: measure
+    description: Number of the order's lines still open.
+    synonyms:
+    - open lines
+    - unshipped lines
+    - backlog lines
+  - name: LATE_LINE_COUNT
+    type: NUMBER
+    role: measure
+    description: Number of the order's lines flagged late. Lateness rule is not stated
+      (assumed receipt after commit date).
+    synonyms:
+    - late lines
+    - delayed lines
+    - late shipments
+  - name: AIR_LINE_COUNT
+    type: NUMBER
+    role: measure
+    description: Number of the order's lines shipped by air (assumed from name).
+    synonyms:
+    - air lines
+    - air shipments
+    - air freight lines
+  - name: LAST_SHIP_DATE
+    type: DATE
+    role: date
+    description: Latest ship date among the order's lines (assumed), from 1992-01-02
+      to 1998-12-01.
+    synonyms:
+    - ship date
+    - last shipment date
+    - shipped date
+  - name: LAST_RECEIPT_DATE
+    type: DATE
+    role: date
+    description: Latest receipt date among the order's lines (assumed), from 1992-01-05
+      to 1998-12-31.
+    synonyms:
+    - receipt date
+    - delivery date
+    - received date
+metrics:
+- id: total_orders
+  name: Total Orders
+  description: Count of distinct orders placed in the period. 1.5M overall.
+  sql: COUNT(DISTINCT O_ORDERKEY)
+  synonyms:
+  - order count
+  - number of orders
+  - orders
+- id: net_revenue
+  name: Net Revenue
+  description: Sum of order net revenue after line discounts.
+  sql: SUM(TOTAL_NET_REVENUE)
+  synonyms:
+  - revenue
+  - net sales
+  - sales
+- id: aov
+  name: Average Order Value
+  description: Net revenue divided by distinct orders. About 145.4k overall.
+  sql: SUM(TOTAL_NET_REVENUE)/NULLIF(COUNT(DISTINCT O_ORDERKEY),0)
+  synonyms:
+  - average order value
+  - avg order value
+  - basket size
+- id: active_customers
+  name: Active Customers
+  description: Distinct customers with at least one order in the period.
+  sql: COUNT(DISTINCT O_CUSTKEY)
+  synonyms:
+  - customers
+  - customer count
+  - buyers
+- id: orders_per_customer
+  name: Orders per Customer
+  description: Distinct orders divided by distinct customers. About 15 overall.
+  sql: COUNT(DISTINCT O_ORDERKEY)/NULLIF(COUNT(DISTINCT O_CUSTKEY),0)
+  synonyms:
+  - order frequency
+  - orders per buyer
+- id: fulfillment_rate
+  name: Order Fulfillment Rate
+  description: Share of orders that are fully fulfilled. About 48.6% overall.
+  sql: SUM(IS_FULFILLED)/NULLIF(COUNT(DISTINCT O_ORDERKEY),0)
+  synonyms:
+  - fulfilment rate
+  - completion rate
+  - fulfilled share
+- id: open_order_rate
+  name: Open Order Rate
+  description: Share of orders still open. About 48.8% overall.
+  sql: SUM(IS_OPEN)/NULLIF(COUNT(DISTINCT O_ORDERKEY),0)
+  synonyms:
+  - backlog rate
+  - open rate
+  - open share
+- id: partial_order_rate
+  name: Partial Order Rate
+  description: Share of orders only partially fulfilled. About 2.6% overall.
+  sql: SUM(IS_PARTIAL)/NULLIF(COUNT(DISTINCT O_ORDERKEY),0)
+  synonyms:
+  - partial rate
+  - partial fulfillment rate
+- id: late_line_rate
+  name: Late Line Rate
+  description: Late lines divided by all order lines. About 63% overall.
+  sql: SUM(LATE_LINE_COUNT)/NULLIF(SUM(LINE_COUNT),0)
+  synonyms:
+  - late rate
+  - late delivery rate
+  - delay rate
+- id: return_line_rate
+  name: Returned Line Rate
+  description: Returned lines divided by all order lines. About 24.6% overall.
+  sql: SUM(RETURNED_LINE_COUNT)/NULLIF(SUM(LINE_COUNT),0)
+  synonyms:
+  - return rate
+  - returns rate
+- id: avg_discount
+  name: Average Discount (Line-Weighted)
+  description: Average discount weighted by line count. About 5% overall.
+  sql: SUM(AVG_DISCOUNT*LINE_COUNT)/NULLIF(SUM(LINE_COUNT),0)
+  synonyms:
+  - discount rate
+  - average discount
+  - weighted discount
+- id: high_priority_share
+  name: High Priority Order Share
+  description: Share of orders flagged high priority. About 40% overall.
+  sql: SUM(IS_HIGH_PRIORITY)/NULLIF(COUNT(DISTINCT O_ORDERKEY),0)
+  synonyms:
+  - urgent share
+  - priority share
+  - high priority rate
+relationships: []
+glossary:
+- term: Open order (backlog)
+  meaning: An order with IS_OPEN = 1 (status O), not yet fulfilled. About 48.8% of
+    orders; assumed to be the order backlog.
+- term: Fulfilled order
+  meaning: An order with IS_FULFILLED = 1 (status F), counted as fully fulfilled.
+- term: Partial order
+  meaning: An order with IS_PARTIAL = 1 (status P), only partially fulfilled. About
+    2.6% of orders.
+- term: High priority order
+  meaning: An order with IS_HIGH_PRIORITY = 1. The 40% share matches 1-URGENT plus
+    2-HIGH priorities (assumed).
+- term: Net revenue
+  meaning: 'TOTAL_NET_REVENUE: order line value after line discounts, summed per order.
+    Differs from gross extended price and header total price.'
+- term: Late line
+  meaning: An order line counted in LATE_LINE_COUNT. Late line rate is late lines
+    divided by total lines; the exact lateness rule is assumed.
+- term: Returned line
+  meaning: An order line counted in RETURNED_LINE_COUNT. Return rate is returned lines
+    divided by total lines.
+- term: Active customer
+  meaning: A distinct customer key with at least one order in the selected period.
+- term: Order grain
+  meaning: Each row is one order, so counts of orders use distinct O_ORDERKEY and
+    line metrics are pre-aggregated per order.
+- term: Line-weighted discount
+  meaning: Each order's average discount weighted by its line count, so orders with
+    more lines count more.

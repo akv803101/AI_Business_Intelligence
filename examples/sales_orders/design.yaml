@@ -1,0 +1,267 @@
+meta:
+  title: Order Performance Leadership Dashboard
+  status: proposed
+  audience: Executive leadership and sales and operations heads who need a quick read
+    on revenue, order volume, fulfillment and delivery quality
+  source: <DATABASE>.<SCHEMA>.ORDERS_ANALYSIS
+  date_column: ORDER_MONTH
+  comparison: month_over_month
+  period_label: auto
+  caveats:
+  - Customer Satisfaction (CSAT/NPS) is not available in this data.
+  - First Response / Resolution Time is not available in this data.
+  - SLA Compliance is not available in this data.
+filters:
+- id: f_month
+  column: ORDER_MONTH
+  type: date/month-year
+- id: f_status
+  column: O_ORDERSTATUS
+  type: string
+- id: f_priority
+  column: O_ORDERPRIORITY
+  type: string
+- id: f_segment
+  column: C_MKTSEGMENT
+  type: string
+- id: f_nation
+  column: C_NATIONKEY
+  type: string
+kpis:
+- id: total_orders
+  name: Total Orders
+  definition: Count of distinct orders placed in the selected period.
+  sql: COUNT(DISTINCT O_ORDERKEY)
+  format: integer
+  target: null
+  target_note: null
+  value: 1500000.0
+- id: net_revenue
+  name: Net Revenue
+  definition: Sum of order net revenue after line discounts.
+  sql: SUM(TOTAL_NET_REVENUE)
+  format: integer
+  target: null
+  target_note: null
+  value: 218102223885.0001
+- id: aov
+  name: Average Order Value
+  definition: Net revenue divided by the number of distinct orders.
+  sql: SUM(TOTAL_NET_REVENUE)/NULLIF(COUNT(DISTINCT O_ORDERKEY),0)
+  format: decimal2
+  target: null
+  target_note: null
+  value: 145401.4826
+- id: active_customers
+  name: Active Customers
+  definition: Count of distinct customers who placed at least one order in the period.
+  sql: COUNT(DISTINCT O_CUSTKEY)
+  format: integer
+  target: null
+  target_note: null
+  value: 99996.0
+- id: orders_per_customer
+  name: Orders per Customer
+  definition: Average number of orders per active customer.
+  sql: COUNT(DISTINCT O_ORDERKEY)/NULLIF(COUNT(DISTINCT O_CUSTKEY),0)
+  format: decimal2
+  target: null
+  target_note: null
+  value: 15.0006
+- id: fulfillment_rate
+  name: Order Fulfillment Rate
+  definition: Share of orders that are fully fulfilled.
+  sql: SUM(IS_FULFILLED)/NULLIF(COUNT(DISTINCT O_ORDERKEY),0)
+  format: percent
+  target: null
+  target_note: null
+  value: 0.4863
+- id: open_order_rate
+  name: Open Order Rate
+  definition: Share of orders that are still open.
+  sql: SUM(IS_OPEN)/NULLIF(COUNT(DISTINCT O_ORDERKEY),0)
+  format: percent
+  target: null
+  target_note: null
+  value: 0.488
+- id: partial_order_rate
+  name: Partial Order Rate
+  definition: Share of orders that are only partially fulfilled.
+  sql: SUM(IS_PARTIAL)/NULLIF(COUNT(DISTINCT O_ORDERKEY),0)
+  format: percent
+  target: null
+  target_note: null
+  value: 0.0257
+- id: late_line_rate
+  name: Late Line Rate
+  definition: Share of order lines flagged as late out of all order lines.
+  sql: SUM(LATE_LINE_COUNT)/NULLIF(SUM(LINE_COUNT),0)
+  format: percent
+  target: null
+  target_note: null
+  value: 0.6321
+- id: return_line_rate
+  name: Returned Line Rate
+  definition: Share of order lines that were returned out of all order lines.
+  sql: SUM(RETURNED_LINE_COUNT)/NULLIF(SUM(LINE_COUNT),0)
+  format: percent
+  target: null
+  target_note: null
+  value: 0.2464
+- id: avg_discount
+  name: Average Discount (Line-Weighted)
+  definition: Average discount rate across order lines, weighting each order's average
+    discount by its line count.
+  sql: SUM(AVG_DISCOUNT*LINE_COUNT)/NULLIF(SUM(LINE_COUNT),0)
+  format: percent
+  target: null
+  target_note: null
+  value: 0.05
+- id: high_priority_share
+  name: High Priority Order Share
+  definition: Share of orders flagged as high priority.
+  sql: SUM(IS_HIGH_PRIORITY)/NULLIF(COUNT(DISTINCT O_ORDERKEY),0)
+  format: percent
+  target: null
+  target_note: null
+  value: 0.4003
+layout:
+- id: header
+  type: text
+  text: '{{title}} — {{period_label}}'
+  row: 0
+  col: 0
+  size_x: 24
+  size_y: 2
+- id: kpi_net_revenue
+  type: kpi
+  kpi: net_revenue
+  row: 2
+  col: 0
+  size_x: 4
+  size_y: 3
+- id: kpi_total_orders
+  type: kpi
+  kpi: total_orders
+  row: 2
+  col: 4
+  size_x: 4
+  size_y: 3
+- id: kpi_aov
+  type: kpi
+  kpi: aov
+  row: 2
+  col: 8
+  size_x: 4
+  size_y: 3
+- id: kpi_active_customers
+  type: kpi
+  kpi: active_customers
+  row: 2
+  col: 12
+  size_x: 4
+  size_y: 3
+- id: kpi_fulfillment_rate
+  type: kpi
+  kpi: fulfillment_rate
+  row: 2
+  col: 16
+  size_x: 4
+  size_y: 3
+- id: kpi_late_line_rate
+  type: kpi
+  kpi: late_line_rate
+  row: 2
+  col: 20
+  size_x: 4
+  size_y: 3
+- id: chart_revenue_month
+  type: line
+  title: Net Revenue by Month (currency units)
+  x: ORDER_MONTH
+  y: net_revenue
+  row: 5
+  col: 0
+  size_x: 12
+  size_y: 6
+- id: chart_orders_month
+  type: line
+  title: Total Orders by Month (number of orders)
+  x: ORDER_MONTH
+  y: total_orders
+  row: 5
+  col: 12
+  size_x: 12
+  size_y: 6
+- id: chart_aov_month
+  type: line
+  title: Average Order Value by Month (currency units per order)
+  x: ORDER_MONTH
+  y: aov
+  row: 11
+  col: 0
+  size_x: 12
+  size_y: 6
+- id: chart_late_month
+  type: line
+  title: Late Line Rate by Month (% of order lines)
+  x: ORDER_MONTH
+  y: late_line_rate
+  row: 11
+  col: 12
+  size_x: 12
+  size_y: 6
+- id: chart_returns_year
+  type: bar
+  title: Returned Line Rate by Order Year (% of order lines)
+  x: ORDER_YEAR
+  y: return_line_rate
+  row: 17
+  col: 0
+  size_x: 12
+  size_y: 6
+- id: chart_revenue_segment
+  type: bar
+  title: Net Revenue by Customer Market Segment (currency units)
+  x: C_MKTSEGMENT
+  y: net_revenue
+  row: 17
+  col: 12
+  size_x: 12
+  size_y: 6
+- id: chart_late_priority
+  type: bar
+  title: Late Line Rate by Order Priority (% of order lines)
+  x: O_ORDERPRIORITY
+  y: late_line_rate
+  row: 23
+  col: 0
+  size_x: 12
+  size_y: 6
+- id: chart_orders_status
+  type: bar
+  title: Total Orders by Order Status (number of orders)
+  x: O_ORDERSTATUS
+  y: total_orders
+  row: 23
+  col: 12
+  size_x: 12
+  size_y: 6
+- id: narrative
+  type: text
+  text: '{{narrative}}'
+  row: 29
+  col: 0
+  size_x: 24
+  size_y: 5
+- id: footer
+  type: text
+  text: '{{caveats}}'
+  row: 34
+  col: 0
+  size_x: 24
+  size_y: 2
+style:
+  accent: '#2F5D8A'
+  context: '#B8C2CC'
+  alert: '#C0392B'

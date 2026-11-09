@@ -213,6 +213,7 @@ and schema, so the view must live where Metabase can see it.
 | `CLAUDE.md` | The rules Claude follows in this project |
 | `STARTER_PROMPT.md` | The prompt to paste into Claude Code to start |
 | `dashboard_spec.yaml` | The worked example spec from the first version of this project |
+| `examples/sales_orders/` | A finished run on Snowflake's free TPC-H sample data: what every step produces, plus the generality test results |
 | `.env.example` | The settings you need in `.env` |
 | `docker-compose.yml` | Runs Metabase locally |
 | `requirements.txt` | Python packages |

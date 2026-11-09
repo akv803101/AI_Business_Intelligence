@@ -1,0 +1,123 @@
+source: <DATABASE>.<SCHEMA>.ORDERS_ANALYSIS
+status: proposed
+kpis:
+- id: total_orders
+  name: Total Orders
+  definition: Count of distinct orders placed in the selected period.
+  sql: COUNT(DISTINCT O_ORDERKEY)
+  format: integer
+  target: null
+  target_note: null
+  value: 1500000.0
+- id: net_revenue
+  name: Net Revenue
+  definition: Sum of order net revenue after line discounts.
+  sql: SUM(TOTAL_NET_REVENUE)
+  format: integer
+  target: null
+  target_note: null
+  value: 218102223885.0001
+- id: aov
+  name: Average Order Value
+  definition: Net revenue divided by the number of distinct orders.
+  sql: SUM(TOTAL_NET_REVENUE)/NULLIF(COUNT(DISTINCT O_ORDERKEY),0)
+  format: decimal2
+  target: null
+  target_note: null
+  value: 145401.4826
+- id: active_customers
+  name: Active Customers
+  definition: Count of distinct customers who placed at least one order in the period.
+  sql: COUNT(DISTINCT O_CUSTKEY)
+  format: integer
+  target: null
+  target_note: null
+  value: 99996.0
+- id: orders_per_customer
+  name: Orders per Customer
+  definition: Average number of orders per active customer.
+  sql: COUNT(DISTINCT O_ORDERKEY)/NULLIF(COUNT(DISTINCT O_CUSTKEY),0)
+  format: decimal2
+  target: null
+  target_note: null
+  value: 15.0006
+- id: fulfillment_rate
+  name: Order Fulfillment Rate
+  definition: Share of orders that are fully fulfilled.
+  sql: SUM(IS_FULFILLED)/NULLIF(COUNT(DISTINCT O_ORDERKEY),0)
+  format: percent
+  target: null
+  target_note: null
+  value: 0.4863
+- id: open_order_rate
+  name: Open Order Rate
+  definition: Share of orders that are still open.
+  sql: SUM(IS_OPEN)/NULLIF(COUNT(DISTINCT O_ORDERKEY),0)
+  format: percent
+  target: null
+  target_note: null
+  value: 0.488
+- id: partial_order_rate
+  name: Partial Order Rate
+  definition: Share of orders that are only partially fulfilled.
+  sql: SUM(IS_PARTIAL)/NULLIF(COUNT(DISTINCT O_ORDERKEY),0)
+  format: percent
+  target: null
+  target_note: null
+  value: 0.0257
+- id: late_line_rate
+  name: Late Line Rate
+  definition: Share of order lines flagged as late out of all order lines.
+  sql: SUM(LATE_LINE_COUNT)/NULLIF(SUM(LINE_COUNT),0)
+  format: percent
+  target: null
+  target_note: null
+  value: 0.6321
+- id: return_line_rate
+  name: Returned Line Rate
+  definition: Share of order lines that were returned out of all order lines.
+  sql: SUM(RETURNED_LINE_COUNT)/NULLIF(SUM(LINE_COUNT),0)
+  format: percent
+  target: null
+  target_note: null
+  value: 0.2464
+- id: avg_discount
+  name: Average Discount (Line-Weighted)
+  definition: Average discount rate across order lines, weighting each order's average
+    discount by its line count.
+  sql: SUM(AVG_DISCOUNT*LINE_COUNT)/NULLIF(SUM(LINE_COUNT),0)
+  format: percent
+  target: null
+  target_note: null
+  value: 0.05
+- id: high_priority_share
+  name: High Priority Order Share
+  definition: Share of orders flagged as high priority.
+  sql: SUM(IS_HIGH_PRIORITY)/NULLIF(COUNT(DISTINCT O_ORDERKEY),0)
+  format: percent
+  target: null
+  target_note: null
+  value: 0.4003
+unsupported:
+- name: Customer Satisfaction (CSAT/NPS)
+  reason: There are no survey or rating columns.
+- name: First Response / Resolution Time
+  reason: The table holds sales orders, not support tickets, so it has no ticket open,
+    response or close timestamps.
+- name: SLA Compliance
+  reason: There are no SLA definitions or commit and promise dates on the table. Only
+    a pre-computed late line count exists.
+- name: Gross Margin / Profitability
+  reason: There is no cost, COGS or supplier cost column.
+- name: Cancellation Rate
+  reason: Order status only has O, F and P. There is no cancelled status.
+- name: Refund / Return Value
+  reason: Returns are available only as line counts, with no refund or return amounts.
+- name: Customer Retention / Churn
+  reason: This needs cohort or window logic across periods, which a single aggregate
+    expression cannot express.
+- name: Revenue vs Budget/Forecast
+  reason: There are no budget or forecast columns.
+- name: Late Delivery Days
+  reason: The table has only a late line count and no per-line commit date, so a delay
+    duration cannot be computed accurately.
