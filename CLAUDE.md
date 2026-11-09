@@ -19,13 +19,13 @@ are planned). This is a teaching project: "this is how it is done, automated". K
 | 9 | chatbot | The chatbot learns the semantic model (`ask`, and Metabase field descriptions for Metabot) | none |
 
 Joins rule: never join a table that has many rows per base row (it multiplies rows and silently breaks every count).
-Summarise it into a rollup at the base grain instead. Each subject (for example tickets, claims) is its own model,
+Summarise it into a rollup at the base grain instead. Each subject (for example orders, returns) is its own model,
 view and dashboard; shared dimension tables such as customers are joined into each. The agent stays read-only:
 never run the `CREATE VIEW` yourself, give the script to the learner. Flag any thresholds or flags Claude invented
 in derived columns (for example a score cut-off) so the learner reviews them at the gate.
 
-Each subject has its own workspace: `FLOW_WORKSPACE=claims python flow.py <step>` keeps that subject's approvals and
-files in `workspaces/claims/` (also for `build_dashboard.py`). With no variable, the project root is the workspace.
+Each subject has its own workspace: `FLOW_WORKSPACE=orders python flow.py <step>` keeps that subject's approvals and
+files in `workspaces/orders/` (also for `build_dashboard.py`). With no variable, the project root is the workspace.
 `python flow.py status` shows where the learner is. `python flow.py reset <step|all> [--yes]` starts again from a step
 (archives files, nothing is deleted; without `--yes` it only shows what would change). Command list: top of `flow.py`.
 
@@ -43,7 +43,7 @@ files in `workspaces/claims/` (also for `build_dashboard.py`). With no variable,
 6. **Check AI-written numbers.** Text written by Claude (summary card, chat answers) must pass the number check (every
    number is a rounding of a real value). Spot-check claims against Snowflake before telling the learner they are right.
 7. **Generic design**: nothing dataset-specific in code. KPIs, filters, layout, meanings and caveats come from the
-   approved files. `dashboard_spec.yaml` is the worked example from the first version.
+   approved files. `examples/` holds finished worked runs.
 8. **Strict scope**: do only what the current step describes. No extra dashboards, files or "helpful additions".
 9. **Report faithfully**: say what was not verified, what failed, and what was skipped.
 

@@ -116,10 +116,15 @@ docker compose up -d        # Metabase on http://localhost:3000
 `.env` holds your Snowflake settings, the Metabase URL and admin login, and `ANTHROPIC_API_KEY`. Check
 `.env.example` for every variable.
 
-**Metabase first run.** Metabase needs a one-time setup: an admin account, an API key (saved in `.env` as
-`METABASE_API_KEY`), and your Snowflake database added and synced. `CLAUDE.md` tells Claude how to do this through
-the Metabase API when you use the starter prompt. You can also do it by hand in the Metabase screens.
-The flow looks for the first Snowflake database registered in Metabase.
+**Metabase first run.** After `docker compose up -d`, run the one-time setup:
+
+```bash
+python metabase_setup.py
+```
+
+It creates the admin account, creates an API key and saves it in `.env` as `METABASE_API_KEY`, adds your
+Snowflake database to Metabase, and syncs it. It is safe to run again, prints no secrets, and skips what is already
+done. The flow looks for the first Snowflake database registered in Metabase.
 
 ## Run the flow
 
@@ -152,7 +157,7 @@ Read each result before you approve. That is the point of the gates.
 proposes a base table, many-to-one joins and rollups, runs the checks, and writes `create_view.sql`. You run that
 script with a role that can create views, then `python flow.py model verify`. Later steps use the view.
 
-**Several subjects.** Each subject (for example orders, claims) is its own model, view and dashboard. Give each
+**Several subjects.** Each subject (for example orders, returns) is its own model, view and dashboard. Give each
 its own workspace:
 
 ```bash
@@ -212,10 +217,10 @@ and schema, so the view must live where Metabase can see it.
 | `tableau_build.py` | Generates a Tableau workbook from the approved design (see limits) |
 | `CLAUDE.md` | The rules Claude follows in this project |
 | `STARTER_PROMPT.md` | The prompt to paste into Claude Code to start |
-| `dashboard_spec.yaml` | The worked example spec from the first version of this project |
 | `examples/sales_orders/` | A finished run on Snowflake's free TPC-H sample data: what every step produces, plus the generality test results |
 | `.env.example` | The settings you need in `.env` |
 | `docker-compose.yml` | Runs Metabase locally |
+| `metabase_setup.py` | One-time Metabase setup from `.env`: admin account, API key, Snowflake database |
 | `requirements.txt` | Python packages |
 
 Files the flow generates while you run it (approvals, profiles, KPIs, designs, reports, workspaces) are

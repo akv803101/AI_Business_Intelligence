@@ -27,8 +27,8 @@ import datetime, json, os, sys
 import yaml
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-# Each subject (tickets, claims, ...) can have its own workspace: FLOW_WORKSPACE=claims keeps its approvals and files
-# in workspaces/claims/. Without it, the project root is the workspace. Code and .env always stay in the root.
+# Each subject (for example orders, returns) can have its own workspace: FLOW_WORKSPACE=orders keeps its approvals and
+# files in workspaces/orders/. Without it, the project root is the workspace. Code and .env always stay in the root.
 WORK = os.path.join(HERE, "workspaces", os.environ["FLOW_WORKSPACE"]) if os.environ.get("FLOW_WORKSPACE") else HERE
 os.makedirs(WORK, exist_ok=True)
 STEPS = ["connect", "profile", "model", "kpis", "semantic", "design", "tool", "build", "chatbot"]
@@ -386,7 +386,7 @@ def semantic_draft():
         f"Rules: one entry for EVERY column, using the exact column names; role is one of: {ROLES}. Describe only what "
         "the names, types, values and KPI results support. Where a meaning is a guess, end the text with "
         "\"(assumed)\". synonyms are words a business user might type. Glossary: 6 to 10 business terms "
-        "(for example what counts as backlog), grounded in the data. Keep each text under 25 words.\n\n"
+        "(for example how a key status or flag is defined), grounded in the data. Keep each text under 25 words.\n\n"
         + json.dumps(brief))
     d = json.loads((t := ask_claude(prompt))[t.index("{"): t.rindex("}") + 1])
     names = {c["name"] for c in prof["columns"]}

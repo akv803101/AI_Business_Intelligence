@@ -1,4 +1,4 @@
-"""Build the Metabase dashboard described in dashboard_spec.yaml, or QA it.
+"""Build the Metabase dashboard described in the approved design (design.yaml), or QA it.
 
   python build_dashboard.py build   # cards + dashboard + layout
   python build_dashboard.py narrate # Claude writes narrative.md from the data (needs ANTHROPIC_API_KEY)
@@ -13,8 +13,8 @@ from decimal import Decimal, ROUND_HALF_UP
 import yaml
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-# Each subject (tickets, claims, ...) can have its own workspace: FLOW_WORKSPACE=claims keeps its approvals and files
-# in workspaces/claims/. Without it, the project root is the workspace. Code and .env always stay in the root.
+# Each subject (for example orders, returns) can have its own workspace: FLOW_WORKSPACE=orders keeps its approvals and
+# files in workspaces/orders/. Without it, the project root is the workspace. Code and .env always stay in the root.
 WORK = os.path.join(HERE, "workspaces", os.environ["FLOW_WORKSPACE"]) if os.environ.get("FLOW_WORKSPACE") else HERE
 os.makedirs(WORK, exist_ok=True)
 MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
@@ -40,7 +40,7 @@ def month_sql(col):
 
 
 ENV = load_env()
-SPEC = yaml.safe_load(open(os.path.join(WORK, os.environ.get("DASHBOARD_SPEC", "dashboard_spec.yaml"))))
+SPEC = yaml.safe_load(open(os.path.join(WORK, os.environ.get("DASHBOARD_SPEC", "design.yaml"))))
 BASE = ENV["METABASE_URL"].rstrip("/")
 SOURCE = SPEC["meta"]["source"].replace("${SNOWFLAKE_DATABASE}", ENV["SNOWFLAKE_DATABASE"]).replace(
     "${SNOWFLAKE_SCHEMA}", ENV["SNOWFLAKE_SCHEMA"])
