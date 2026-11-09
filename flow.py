@@ -24,7 +24,7 @@ Every step must be approved before the next one runs.
 
 Credentials come from .env only; Snowflake access is read-only.
 """
-import datetime, json, os, sys
+import calendar, datetime, json, os, sys
 
 import yaml
 
@@ -199,6 +199,28 @@ def active_profile():
     return objs[0] if objs else p
 
 
+def partial_month(hi, day_values):
+    """True when the data stops before the last day of its final month. Needs day-level dates: a column whose values
+    all fall on one day of the month (a month column) cannot be judged on its own."""
+    if not hi or day_values < 2:
+        return False
+    y, m, d = int(hi[:4]), int(hi[5:7]), int(hi[8:10])
+    return d < calendar.monthrange(y, m)[1]
+
+
+def partial_month_of(columns, name):
+    """'YYYY-MM' when the last month of the time column `name` is incomplete, else None. A day-level column is judged
+    by its own last date. A month column has no days, so it is judged by the day-level date columns of the same table
+    that end in the same month: if one of them stops before that month ends, the month is incomplete."""
+    col = next((c for c in columns if c["name"] == name and "max" in c and "day_values" in c), None)
+    if not col:
+        return None
+    if col["day_values"] >= 2:
+        return col["max"][:7] if partial_month(col["max"], col["day_values"]) else None
+    same = [c for c in columns if c is not col and c.get("day_values", 0) >= 2 and c["max"][:7] == col["max"][:7]]
+    return col["max"][:7] if any(partial_month(c["max"], c["day_values"]) for c in same) else None
+
+
 def profile_one(cur, e, view, raw=True):
     db, schema = src(e) if raw else (e["SNOWFLAKE_DATABASE"], e["SNOWFLAKE_SCHEMA"].upper())
     view = view.upper()
@@ -215,6 +237,9 @@ def profile_one(cur, e, view, raw=True):
         if typ in ("DATE", "TIMESTAMP_NTZ", "TIMESTAMP_LTZ", "TIMESTAMP_TZ", "NUMBER", "FIXED", "FLOAT", "REAL"):
             lo, hi = query(cur, f'SELECT MIN("{name}"), MAX("{name}") FROM {full}')[0]
             col["min"], col["max"] = str(lo), str(hi)
+            if typ == "DATE" or typ.startswith("TIMESTAMP"):
+                days = query(cur, f'SELECT COUNT(DISTINCT DAY("{name}")) FROM {full}')[0][0]
+                col["day_values"] = days
         if typ in ("TEXT", "VARCHAR") and 0 < distinct <= 20:
             col["values"] = {str(v): c for v, c in query(cur, f'SELECT "{name}", COUNT(*) FROM {full} '
                                                               f'GROUP BY 1 ORDER BY 2 DESC')}
@@ -574,9 +599,15 @@ def design_propose():
                      "comparison": d["comparison"], "period_label": "auto",
                      "caveats": [u["name"] + " is not available in this data." for u in kp["unsupported"][:3]]},
             "filters": d["filters"], "kpis": kp["kpis"], "layout": d["layout"], "style": STYLE}
+    pm = partial_month_of(prof["columns"], spec["meta"]["date_column"])
+    if pm:  # build skips a partial last month in the month-over-month arrows; the footer says so
+        spec["meta"]["partial_month"] = pm
+        spec["meta"]["caveats"].append(f"The last month ({pm}) is incomplete; month-over-month arrows "
+                                       "compare the last two complete months.")
     yaml.safe_dump(spec, open(DESIGN_FILE, "w"), sort_keys=False, allow_unicode=True)
     md = ["# Dashboard design (proposed)", "", f"**{d['title']}** for {d['audience']}. Comparison: {d['comparison']}.", "",
           d["rationale"], "", "Filters: " + ", ".join(f"{f['id']} ({f['column']})" for f in d["filters"]), "",
+          "Footer caveats: " + (" ".join(spec["meta"]["caveats"]) or "none"), "",
           "```", wireframe(d["layout"], names), "```", "", "| Item | Type | Shows |", "|---|---|---|"]
     for i in sorted(d["layout"], key=lambda i: (i["row"], i["col"])):
         shows = kname.get(i.get("kpi")) or (f"{kname.get(i.get('y'))} by {i.get('x')}" if i["type"] in ("line", "bar")

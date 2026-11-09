@@ -260,8 +260,11 @@ git-ignored; each learner creates their own.
 - **Metabase is the ready tool.** Tableau has a workbook generator (`tableau_build.py`) that needs a template
   workbook on your published data source and a Claude session with the Tableau connector; it is not part of
   `flow.py build`. Power BI is not built.
-- **Dates:** the design step uses a date or timestamp column as the time column. If the last month in your data is
-  partial, month-over-month arrows will compare a partial month with a full one; the flow does not detect this yet.
+- **Dates:** the design step uses a date or timestamp column as the time column. If the data stops part-way through
+  its last month, the design step notes that in the footer and the month-over-month arrows compare the last two
+  complete months. A month column has no days, so it is judged by the day-level date columns in the same table;
+  if there are none, a partial last month cannot be detected. The decision is made at the design step; if your
+  data is refreshed later, run `design` again.
 - **Metabot** (Metabase's AI assistant) is configured by you in Metabase Admin settings. This project pushes your
   column meanings into Metabase for it to use; whether Metabot uses them is not verified.
 - **Single table per dashboard:** each dashboard reads one table or view (the model step builds it).

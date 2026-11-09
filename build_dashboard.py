@@ -131,19 +131,28 @@ def period_label(db_id):
     return f"{MONTHS[m1-1]}–{MONTHS[m2-1]} {y2}" if y1 == y2 else f"{MONTHS[m1-1]} {y1}–{MONTHS[m2-1]} {y2}"
 
 
+def partial_month_label(db_id=None):
+    """'YYYY-MM' of the last month when the approved design says it is incomplete, else None."""
+    return SPEC["meta"].get("partial_month")
+
+
 def mom_title(db_id, kpi):
-    """Latest month vs previous month, as text with an arrow (used when the tile is a plain scalar)."""
+    """Latest complete month vs the one before it, as text with an arrow (used when the tile is a plain scalar).
+    A partial last month is skipped, so the arrow never compares a short month with a full one."""
     if not month_col():
         return kpi["name"]
+    skip = 1 if partial_month_label(db_id) else 0
     rows = run_sql(db_id, f"SELECT {month_sql(month_col())} m, {kpi['sql']} "
-                          f"FROM {SOURCE} GROUP BY 1 ORDER BY 1 DESC LIMIT 2")
+                          f"FROM {SOURCE} GROUP BY 1 ORDER BY 1 DESC LIMIT {2 + skip}")[skip:]
     if len(rows) < 2:
         return kpi["name"]
     (m_now, now), (m_prev, prev) = rows[0], rows[1]
     d = float(now) - float(prev)
     arrow = "▲" if d > 0 else "▼" if d < 0 else "►"
     delta = f"{abs(d) * 100:.1f}pp" if kpi["format"] == "percent" else f"{abs(d) / float(prev) * 100:.1f}%"
-    return f"{kpi['name']}  {arrow} {delta} vs {MONTHS[int(str(m_prev)[5:7]) - 1]}"
+    label = f"{MONTHS[int(str(m_now)[5:7]) - 1]} vs {MONTHS[int(str(m_prev)[5:7]) - 1]}" if skip else \
+        f"vs {MONTHS[int(str(m_prev)[5:7]) - 1]}"
+    return f"{kpi['name']}  {arrow} {delta} {label}"
 
 
 def text_card(n, item, content):
@@ -216,6 +225,8 @@ def get_facts():
     for r in (run_sql(db_id, f"SELECT {month_sql(mc)}, " + ", ".join(k["sql"] for k in KPIS.values()) +
                       f" FROM {SOURCE} GROUP BY 1 ORDER BY 1") if mc else []):
         out["by_month"][str(r[0])[:7]] = {k["name"]: round(float(v), 4) for k, v in zip(KPIS.values(), r[1:])}
+    if mc and partial_month_label(db_id):
+        out["partial_month"] = partial_month_label(db_id)
     for item in SPEC["layout"]:
         if item.get("x") and item["x"] != mc:
             k = KPIS[item["y"]]
@@ -253,7 +264,9 @@ def narrate():
         "thousands separators on counts and amounts; other numbers with at most 2 decimals. Name the biggest "
         "driver you find in the breakdowns. Do not invent causes. If the definitions say a metric depends on an "
         "assumption, say so briefly next to it. Plain, short sentences. Under 140 words.\n"
-        f"{defs}\nFACTS (JSON):\n{json.dumps(f)}")
+        + (f"The facts include partial_month ({f['partial_month']}): that month is incomplete. Do not compare it with "
+           "other months and do not call its lower totals a decline; say it is partial.\n" if f.get("partial_month") else "")
+        + f"{defs}\nFACTS (JSON):\n{json.dumps(f)}")
     feedback = ""
     for _ in range(3):  # redraft if any number is not a plain rounding of a fact
         text = ask_claude(prompt + feedback).strip()
@@ -302,6 +315,8 @@ def unsupported_numbers(text, f):
             stack += list(x)
         elif isinstance(x, (int, float)) and not isinstance(x, bool):
             vals.append(x)
+    if f.get("partial_month"):  # the text may name the partial month, for example "August 1998"
+        vals += [int(part) for part in f["partial_month"].split("-")]
     ok = set()
     for v in vals:
         for scale in (1, 100):  # as-is, or as a percentage
