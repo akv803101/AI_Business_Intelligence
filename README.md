@@ -10,19 +10,36 @@ This is a teaching project: *this is how it is done, automated.* The code is sma
 
 ---
 
+## About
+
+Most BI projects stall between "the data is in the warehouse" and "leaders trust the dashboard". This project
+automates the path and keeps a person in charge of every decision along it.
+
+- **Who it is for:** analysts and learners who have data in Snowflake and want a checked dashboard and a chatbot,
+  and teachers who want to show how that is done with an AI assistant.
+- **What makes it different:** every step needs your approval, every KPI is recomputed in Snowflake and compared
+  with the dashboard, every number the AI writes is checked, and joins are tested so they cannot silently multiply rows.
+- **How it is built:** a small, readable Python flow (`flow.py`) driven by Claude Code, a Metabase builder and QA
+  script, and plain files you can read and edit (Excel for KPIs and meanings, YAML for the design).
+- **What it has been tested on:** support tickets, insurance claims (with joins), and sales orders on Snowflake's
+  free TPC-H sample data, in a different database from the one used for the views. See `examples/sales_orders/`.
+- **Scope today:** Snowflake and Metabase. Tableau has a workbook generator; Power BI is not built.
+  See [Current status and limits](#current-status-and-limits).
+
 ## Contents
-1. [What you get](#what-you-get)
-2. [How it works](#how-it-works)
-3. [Safety principles](#safety-principles)
-4. [Before you start](#before-you-start)
-5. [Set up](#set-up)
-6. [Run the flow](#run-the-flow)
-7. [Working with several tables and subjects](#working-with-several-tables-and-subjects)
-8. [Bring your own KPIs and meanings (Excel)](#bring-your-own-kpis-and-meanings-excel)
-9. [Command reference](#command-reference)
-10. [What is in this repository](#what-is-in-this-repository)
-11. [Current status and limits](#current-status-and-limits)
-12. [Troubleshooting](#troubleshooting)
+1. [About](#about)
+2. [What you get](#what-you-get)
+3. [How it works](#how-it-works)
+4. [Safety principles](#safety-principles)
+5. [Before you start](#before-you-start)
+6. [Set up](#set-up)
+7. [Run the flow](#run-the-flow)
+8. [Working with several tables and subjects](#working-with-several-tables-and-subjects)
+9. [Bring your own KPIs and meanings (Excel)](#bring-your-own-kpis-and-meanings-excel)
+10. [Command reference](#command-reference)
+11. [What is in this repository](#what-is-in-this-repository)
+12. [Current status and limits](#current-status-and-limits)
+13. [Troubleshooting](#troubleshooting)
 
 ---
 
