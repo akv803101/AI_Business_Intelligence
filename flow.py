@@ -2,6 +2,8 @@
 
 Every step must be approved before the next one runs.
 
+  python flow.py init                   # ask for your settings and write .env (once, before step 1)
+  python flow.py doctor                 # check the setup: Docker, Metabase, Snowflake login, keys
   python flow.py status                 # show each step and its gate
   python flow.py connect                # test the Snowflake connection and list the tables
   python flow.py profile <T1> [T2 ...]  # profile one or more tables/views (profile.json, profile.md)
@@ -887,7 +889,8 @@ def choose_tool(name=None):
 
 if __name__ == "__main__":
     cmd, args = (sys.argv[1] if len(sys.argv) > 1 else "status"), sys.argv[2:]
-    {"status": lambda: status(), "connect": lambda: connect(), "profile": lambda: profile(*args),
+    {"init": lambda: __import__("preflight").init_env(), "doctor": lambda: __import__("preflight").doctor(),
+     "status": lambda: status(), "connect": lambda: connect(), "profile": lambda: profile(*args),
      "approve": lambda: approve(args[0]),
      "kpis": lambda: {"suggest": kpis_suggest, "template": kpis_template,
                       "import": lambda: kpis_import(args[1])}[args[0]](),

@@ -106,40 +106,40 @@ You need:
 - An **Anthropic API key** (for the summary card, the chatbot and the suggestions in steps 3 to 6).
 - **[Claude Code](https://claude.com/claude-code)**, to run the project the guided way.
 
-A typical read-only setup (adapt the names; an admin runs this once):
-
-```sql
-CREATE ROLE DASHBOARD_READER;
-GRANT USAGE ON WAREHOUSE <WAREHOUSE> TO ROLE DASHBOARD_READER;
-GRANT USAGE ON DATABASE <DATABASE> TO ROLE DASHBOARD_READER;
-GRANT USAGE ON SCHEMA <DATABASE>.<SCHEMA> TO ROLE DASHBOARD_READER;
-GRANT SELECT ON ALL TABLES IN SCHEMA <DATABASE>.<SCHEMA> TO ROLE DASHBOARD_READER;
-GRANT SELECT ON ALL VIEWS  IN SCHEMA <DATABASE>.<SCHEMA> TO ROLE DASHBOARD_READER;
-CREATE USER DASHBOARD_AGENT PASSWORD = '<choose one>' DEFAULT_ROLE = DASHBOARD_READER;
-GRANT ROLE DASHBOARD_READER TO USER DASHBOARD_AGENT;
-```
+`snowflake_setup.sql` creates a read-only role, user, warehouse, database and schema in one go (your Snowflake
+admin runs it once). Or adapt it to your own names.
 
 Views need an explicit `GRANT SELECT` to be visible to the read-only role. The `create_view.sql` script from
 step 3 includes it.
 
 ## Set up
 
+New here? Follow [QUICKSTART.md](QUICKSTART.md): a first run on Snowflake's free sample data.
+
+**One command:**
+
+```bash
+python setup.py
+```
+
+It installs the packages, asks for your settings and writes `.env`, starts Metabase in Docker, does the one-time
+Metabase setup, and checks everything. It is safe to run again. If your admin still has to create the read-only
+Snowflake role, give them `snowflake_setup.sql` first.
+
+**Or step by step:**
+
 ```bash
 pip install -r requirements.txt
-cp .env.example .env        # fill it in; never commit it
+python flow.py init         # asks for your settings and writes .env (secrets are typed hidden)
 docker compose up -d        # Metabase on http://localhost:3000
+python metabase_setup.py    # one-time Metabase setup
+python flow.py doctor       # checks Docker, Metabase, your Snowflake login and your keys
 ```
 
-`.env` holds your Snowflake settings, the Metabase URL and admin login, and `ANTHROPIC_API_KEY`. Check
-`.env.example` for every variable.
+`.env` holds your Snowflake settings, the Metabase URL and admin login, and `ANTHROPIC_API_KEY`. You can also copy
+`.env.example` to `.env` and fill it in by hand (it is a hidden file; use `ls -a` to see it).
 
-**Metabase first run.** After `docker compose up -d`, run the one-time setup:
-
-```bash
-python metabase_setup.py
-```
-
-It creates the admin account, creates an API key and saves it in `.env` as `METABASE_API_KEY`, adds your
+**What the Metabase setup does.** `metabase_setup.py` creates the admin account, creates an API key and saves it in `.env` as `METABASE_API_KEY`, adds your
 Snowflake database to Metabase, and syncs it. It is safe to run again, prints no secrets, and skips what is already
 done. The flow looks for the first Snowflake database registered in Metabase.
 
@@ -210,6 +210,8 @@ and schema, so the view must live where Metabase can see it.
 
 | Command | What it does |
 |---|---|
+| `init` | Ask for your settings and write `.env` (secrets typed hidden) |
+| `doctor` | Check Docker, Metabase, your Snowflake login and your keys; says what to fix |
 | `status` | Show each step and its gate |
 | `connect` | Test the Snowflake login and list the tables |
 | `profile <T1> [T2 ...]` | Profile one or more tables or views |
@@ -237,7 +239,11 @@ and schema, so the view must live where Metabase can see it.
 | `examples/sales_orders/` | A finished run on Snowflake's free TPC-H sample data: what every step produces, plus the generality test results |
 | `.env.example` | The settings you need in `.env` |
 | `docker-compose.yml` | Runs Metabase locally |
+| `setup.py` | One-command setup: packages, `.env`, Docker, Metabase, checks |
+| `preflight.py` | `init` (writes `.env` for you) and `doctor` (checks the setup), run through `flow.py` |
 | `metabase_setup.py` | One-time Metabase setup from `.env`: admin account, API key, Snowflake database |
+| `snowflake_setup.sql` | The read-only role, user, warehouse and schema, for your Snowflake admin to run |
+| `QUICKSTART.md` | First run on Snowflake's free sample data |
 | `requirements.txt` | Python packages |
 
 Files the flow generates while you run it (approvals, profiles, KPIs, designs, reports, workspaces) are
@@ -247,6 +253,8 @@ git-ignored; each learner creates their own.
 
 - **Built and QA-checked:** the nine-step flow and the Metabase dashboard, tested on three subjects (support
   tickets, insurance claims with joins, and a sales example on Snowflake's TPC-H sample data).
+- **Setup helpers not yet tested on a clean machine:** `setup.py`, `flow.py init`, `flow.py doctor`, `snowflake_setup.sql`
+  and the fresh-install path of `metabase_setup.py` were checked on the author's machine only (the SQL was not run).
 - **Verified through APIs, not on screen.** Look at the dashboard in your browser before you share it.
 - **Snowflake only.** Other warehouses and file uploads are not supported.
 - **Metabase is the ready tool.** Tableau has a workbook generator (`tableau_build.py`) that needs a template

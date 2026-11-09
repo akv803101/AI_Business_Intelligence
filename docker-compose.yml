@@ -1,6 +1,6 @@
 services:
   metabase:
-    image: metabase/metabase:latest   # pin to a specific stable tag once it works
+    image: metabase/metabase:v0.65.3.3   # the version this project was built and tested on
     container_name: metabase
     ports:
       - "3000:3000"
