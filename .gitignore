@@ -1,0 +1,31 @@
+# secrets
+.env
+
+# state this project generates while a learner runs the flow (each learner makes their own)
+approvals.yaml
+profile.json
+profile.md
+model.yaml
+model.xlsx
+model.sql
+create_view.sql
+view_profile.json
+kpis.yaml
+kpis.xlsx
+kpis_template.xlsx
+semantic_model.xlsx
+semantic_model.yaml
+design.yaml
+design.md
+tool.json
+narrative.md
+qa_report.md
+tableau.twb
+tableau_calcs.yaml
+tableau_check.md
+workspaces/
+
+# other
+.DS_Store
+__pycache__/
+*.bak

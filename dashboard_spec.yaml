@@ -1,0 +1,72 @@
+# Tool-neutral dashboard spec. The agent reads this and builds in Metabase.
+# status: proposed  -> KPIs must be reviewed/approved by the user before building.
+meta:
+  title: Support Operations Dashboard
+  status: proposed
+  audience: Leadership
+  source: ${SNOWFLAKE_DATABASE}.${SNOWFLAKE_SCHEMA}.VW_TICKET_BAS   # ticket-level view, one row per ticket
+  date_column: CREATED_AT
+  comparison: auto            # month_over_month if >=2 months of data, else none
+  period_label: auto          # e.g. "Jul–Sep 2026", filled from data
+  caveats:
+    - "Synthetic practice data."
+    - "SLA target of 60 minutes is an assumption for teaching."
+    - "No resolution time, CSAT or cost data is available in this view."
+
+filters:                      # dashboard filters wired to SQL template-tags
+  - {id: month,   column: CREATED_MONTH, type: date/month-year}
+  - {id: channel, column: CHANNEL,       type: string}
+  - {id: region,  column: REGION,        type: string}
+  - {id: segment, column: SEGMENT,       type: string}
+
+kpis:                         # confirm column names during profiling
+  - {id: tickets,        name: Tickets,                 format: integer, sql: "COUNT(DISTINCT TICKET_ID)"}
+  - {id: backlog_rate,   name: Backlog rate,            format: percent, sql: "SUM(IS_BACKLOG)/COUNT(DISTINCT TICKET_ID)"}
+  - {id: closure_rate,   name: Closure rate,            format: percent, sql: "SUM(IS_CLOSED)/COUNT(DISTINCT TICKET_ID)"}
+  - {id: avg_reply_min,  name: Avg first reply (min),   format: minutes, sql: "AVG(FIRST_REPLY_MIN)"}
+  - {id: median_reply,   name: Median first reply (min),format: minutes, sql: "MEDIAN(FIRST_REPLY_MIN)"}
+  - {id: sla_breach,     name: SLA breach rate,         format: percent, sql: "SUM(IFF(FIRST_REPLY_MIN > 60,1,0))/NULLIF(SUM(IS_REPLIED),0)", target: 60, target_note: "60-min SLA (assumption)"}
+  - {id: no_reply,       name: No-reply rate,           format: percent, sql: "SUM(IS_NO_REPLY)/COUNT(DISTINCT TICKET_ID)"}
+  - {id: reopen_all,     name: Reopen rate (all),       format: percent, sql: "SUM(IS_REOPENED)/COUNT(DISTINCT TICKET_ID)"}
+  - {id: reopen_closed,  name: Reopen rate (closed),    format: percent, sql: "SUM(IS_REOPENED)/NULLIF(SUM(IS_CLOSED),0)"}
+  - {id: tickets_per_cust, name: Tickets per customer,  format: decimal2, sql: "COUNT(DISTINCT TICKET_ID)/COUNT(DISTINCT CUSTOMER_ID)"}
+  - {id: touches,        name: Touches per ticket,      format: decimal2, sql: "SUM(EVENT_COUNT)/COUNT(DISTINCT TICKET_ID)"}
+  - {id: reassign,       name: Reassignments per ticket,format: decimal2, sql: "SUM(REASSIGNMENT_COUNT)/COUNT(DISTINCT TICKET_ID)"}
+
+# Expected values for QA (from the user's KPI sheet; static data)
+qa_expected:
+  tickets: 4005
+  backlog_rate: 0.2205
+  closure_rate: 0.7795
+  avg_reply_min: 40.6
+  median_reply: 25
+  sla_breach: 0.1916
+  no_reply: 0.0619
+  reopen_all: 0.0747
+  reopen_closed: 0.0958
+  tickets_per_cust: 5.06
+  touches: 2.07
+  reassign: 0.52
+
+# Layout on Metabase's 24-column grid: row/col are the top-left cell, size_x/size_y are width/height.
+layout:
+  - {id: header,        type: text,   row: 0,  col: 0,  size_x: 24, size_y: 2, text: "{{title}} — {{period_label}}"}
+  - {id: k_tickets,     type: kpi,    kpi: tickets,       row: 2,  col: 0,  size_x: 4, size_y: 3}
+  - {id: k_backlog,     type: kpi,    kpi: backlog_rate,  row: 2,  col: 4,  size_x: 4, size_y: 3}
+  - {id: k_reply,       type: kpi,    kpi: avg_reply_min, row: 2,  col: 8,  size_x: 4, size_y: 3}
+  - {id: k_sla,         type: kpi,    kpi: sla_breach,    row: 2,  col: 12, size_x: 4, size_y: 3}
+  - {id: k_noreply,     type: kpi,    kpi: no_reply,      row: 2,  col: 16, size_x: 4, size_y: 3}
+  - {id: k_reopen,      type: kpi,    kpi: reopen_all,    row: 2,  col: 20, size_x: 4, size_y: 3}
+  - {id: c_trend,       type: line,   title: "Tickets per month",                    x: CREATED_MONTH, y: tickets, row: 5,  col: 0,  size_x: 16, size_y: 6}
+  - {id: c_status,      type: bar,    title: "Tickets by status",                    x: STATUS,        y: tickets, row: 5,  col: 16, size_x: 8,  size_y: 6}
+  - {id: c_reply_ch,    type: bar,    title: "Average first reply by channel (min)", x: CHANNEL,       y: avg_reply_min, goal: 60, row: 11, col: 0,  size_x: 12, size_y: 6}
+  - {id: c_sla_ch,      type: bar,    title: "SLA breach rate by channel",           x: CHANNEL,       y: sla_breach,    row: 11, col: 12, size_x: 12, size_y: 6}
+  - {id: c_reopen_cat,  type: bar,    title: "Reopen rate by category",              x: CATEGORY,      y: reopen_all,    row: 17, col: 0,  size_x: 12, size_y: 6}
+  - {id: c_backlog_reg, type: bar,    title: "Backlog rate by region",               x: REGION,        y: backlog_rate,  row: 17, col: 12, size_x: 12, size_y: 6}
+  - {id: narrative,     type: text,   row: 23, col: 0,  size_x: 24, size_y: 5, text: "{{narrative}}"}   # AI-written, from narrative.md
+  - {id: footer,        type: text,   row: 28, col: 0,  size_x: 24, size_y: 2, text: "{{caveats}}"}
+
+style:
+  accent: "#2F5D8A"
+  context: "#B8C2CC"
+  alert: "#C0392B"
